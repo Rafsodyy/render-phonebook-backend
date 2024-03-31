@@ -4,6 +4,7 @@ const app = express()
 const morganBody = require ('morgan-body')
 const cors = require('cors')
 
+//cross origin middleware for deployement 
 app.use(cors())
 //Parser first then followed by morganBody
 app.use(express.json())
@@ -11,6 +12,9 @@ app.use(express.json())
 morganBody(app)
 //Custom app use token to log using morgan
 // app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
+
+//Use the dist production build front end
+app.use(express.static('dist'))
 
 let persons = [
     { 
