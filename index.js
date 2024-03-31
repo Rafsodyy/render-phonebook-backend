@@ -13,7 +13,7 @@ morganBody(app)
 //Custom app use token to log using morgan
 // app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
-//Use the dist production build front end
+//Use the dist production build front-end
 app.use(express.static('dist'))
 
 let persons = [
