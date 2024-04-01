@@ -1,8 +1,8 @@
 const express = require('express')
+const cors = require('cors')
 const morgan = require('morgan')
 const app = express()
 const morganBody = require ('morgan-body')
-const cors = require('cors')
 
 //cross origin middleware for deployement 
 app.use(cors())
@@ -38,6 +38,7 @@ let persons = [
       "number": "39-23-6423122"
     }
 ]
+
 const generateDate = () => {
   const date = new Date();
   let fullDate = date.toString();
