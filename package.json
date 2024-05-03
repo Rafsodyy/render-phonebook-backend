@@ -1,25 +1,18 @@
 {
-  "name": "phonebook_backend",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "phonebook_working_server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "express",
-    "rest_api",
-    "backend"
-  ],
-  "author": "Rax",
-  "license": "ISC",
+  "author": "rax",
+  "license": "MIT",
+  "description": "",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.1",
-    "mongoose": "^8.3.1",
+    "express": "^4.19.2",
     "morgan": "^1.10.0",
     "morgan-body": "^2.6.9"
   },
