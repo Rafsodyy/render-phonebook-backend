@@ -1,1 +1,5 @@
 GET http://localhost:3001/api/persons
+
+
+### get single phonebook
+GET  http://localhost:3001/api/persons/1

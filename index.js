@@ -1,44 +1,19 @@
 const express = require('express')
+const app = express()
+require('dotenv').config()
+
+const personDb = require('./models/phonebook')
+
+app.use(express.static('dist'))
+
+const cors = require('cors')
+app.use(cors())
 const morgan = require('morgan')
 const morganBody = require('morgan-body')
-const app = express()
-const cors = require('cors')
-
-app.use(cors())
+const { default: mongoose } = require('mongoose')
 app.use(express.json())
-app.use(express.static('dist'))
-// morganBody(app)
-// app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
-
-let persons = [
-    { 
-      "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
-// const generateId = () => {
-// 	const maxId = persons.length > 0
-// 	? Math.max(...persons.map(p => p.id))
-// 	: 0
-// 	return maxId + 1
-// }
+morganBody(app)
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms'))
 
 const generateId = () => {
 	// const matchingId = persons.filter(person => p.id)
@@ -52,66 +27,128 @@ const generateDate = () => {
 	return fullDate
   }
 
+const countPhonebook = () => {
+	return personDb.find({})
+	.then(phonebookData => phonebookData.length)
+	.catch(error => next(error))
+}
+
+
 app.get('/info', (request, response) => {
-	response.send(`<p>Phonebook has info for 2 people </p><p>${generateDate()}</p>`)
+	countPhonebook()
+	.then(count => {
+		response.send(`<p>Phonebook has info for ${count} people </p><p>${generateDate()}</p>`)
+	})
   })
 
-app.get('/api/persons', (request, response) => {
-	response.json(persons)
+app.get('/api/persons', (request, response, next) => {
+	personDb.find({})
+	.then( phonebookData => {
+		response.json(phonebookData)
+		console.log(phonebookData)
+	})
+	// .catch(error => next(error))
+
+
 })
 
-app.get('/api/persons/:id', (request, response) => {
-	const personId = Number(request.params.id)
-	const person = persons.find(person => person.id === personId)
-	response.json(person)
+app.get('/api/persons/:id', (request, response, next) => {
+	personDb.findById(request.params.id).then(phonebookData => {
+		if(phonebookData){
+			response.json(phonebookData)
+		  } else {
+			response.status(404).end()
+		  }  
+		})
+		.catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-	const personId = Number(request.params.id)
-	persons = persons.filter(person => person.id !== personId)
-	response.status(404).end()
-})
-
-app.post('/api/persons', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
+	// const personId = Number(request.params.id)
+	// persons = persons.filter(person => person.id !== personId)
+	// response.status(404).end()
 	const body = request.body
+	console.log('Thsi is the id of object to delete', request.params.id)
+	console.log('This is the body', body.name, body.number)
+	personDb.findByIdAndDelete(request.params.id)
+	.then((result) => {
+		response.status(204).end()
+	})
+	.catch(error => next(error))
+})
 
-	const nameIsExisting = persons.find(person => person.name === body.name) ? true : false
-	if(nameIsExisting === true){
-		return response.json({
-			error: "Name is already existing"
+const inspectValidPhonebook = (name, number) => {
+	
+	return console.log(number, name, 'inspected')
+	// if(number.length >= 8 ){
+	// 	return number
+	// } else {
+	// 	return response.status(400).json({ error: 'Number must be greater or equal to 8 numbers '})
+	// }
+}
+
+app.put('/api/persons/:id', (request, response, next) => {
+	const {name, number} = request.body
+	inspectValidPhonebook(name, number)
+	personDb.findByIdAndUpdate(
+		request.params.id,
+		{name, number},
+		{new: true, runValidators: true, context: 'query'})
+		.then(updatedPhonebook => {
+			if (!updatedPhonebook) {
+				return response.status(404).json({ error: 'Person not found' });
+			} else {
+				console.log(updatedPhonebook)
+				response.json(updatedPhonebook)
+			}
 		})
-	}
+		.catch(error => next(error))
 
-	if(!body.name){
-		return response.status(400).json({
-			error: 'Name is missing'
+})
+
+app.post('/api/persons', (request, response, next) => {
+	const body = request.body
+	// inspectValidPhonebook(body.name, body.number)
+	if(!body.name && !body.number){
+		return response.status(400).json({ error: 'Name or number is missing'})	
+	}
+		const person = new personDb ({
+			name: body.name,
+			number: body.number
 		})
-	}
-	if(!body.number){
-		return response.status(404).json({
-			error: 'Number is missing'
-		})
-	}
 
-	const person = {
-		id: generateId(),
-		name: body.name,
-		number: body.number
-	}
-	persons = persons.concat(person)
-
-	// morgan.token('body', request => {
-	// 	return JSON.stringify(request.body)
-	// })
+		person.save()
+			.then(savedPhonebook => {
+				if(savedPhonebook){
+					return response.json(savedPhonebook)
+				} else {
+					return response.status(404).json({ error: 'Empty response'})
+				}
+			})
+			.catch(error => next(error))
 
 })
 
 const unknownEndpoint = (request, response) => {
 	response.status(404).send({ error: 'unknown endpoint'})
-  }
-app.use(unknownEndpoint)
+}
 
-const PORT = process.env.PORT || 3001
+const  errorHandler = (error, request, response, next) => {
+	console.error(error.message)
+
+	if(error.name === 'CastError'){
+		return response.status(404).send({ error: 'malformatted id' })
+	} else if (error.name === 'ValidationError'){
+		return response.status(400).json({ error: error.message })
+	}
+	next(error)
+}
+
+
+app.use(unknownEndpoint)
+app.use(errorHandler)
+
+const PORT = process.env.PORT
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`)
 })
