@@ -1,5 +1,7 @@
-const express = require('express')
+const express=require('express')
+
 const app = express()
+
 require('dotenv').config()
 
 const personDb = require('./models/phonebook')
@@ -10,56 +12,47 @@ const cors = require('cors')
 app.use(cors())
 const morgan = require('morgan')
 const morganBody = require('morgan-body')
-const { default: mongoose } = require('mongoose')
+// const mongoose = require('mongoose')
 app.use(express.json())
 morganBody(app)
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'))
 
-const generateId = () => {
-	// const matchingId = persons.filter(person => p.id)
-	const newId =  Math.floor(Math.random() * 10000);
-	return newId
-  }
-
 const generateDate = () => {
-	const date = new Date();
-	let fullDate = date.toString();
+  	const date = new Date()
+	let fullDate = date.toString()
 	return fullDate
-  }
+}
 
-const countPhonebook = () => {
+const countPhonebook = (next) => {
 	return personDb.find({})
-	.then(phonebookData => phonebookData.length)
-	.catch(error => next(error))
+		.then(phonebookData => phonebookData.length)
+		.catch(error => next(error))
 }
 
 
 app.get('/info', (request, response) => {
 	countPhonebook()
-	.then(count => {
-		response.send(`<p>Phonebook has info for ${count} people </p><p>${generateDate()}</p>`)
-	})
-  })
+		.then(count => {
+			response.send(`<p>Phonebook has info for ${count} people </p><p>${generateDate()}</p>`)
+		})
+})
 
-app.get('/api/persons', (request, response, next) => {
+app.get('/api/persons', (request, response) => {
 	personDb.find({})
-	.then( phonebookData => {
-		response.json(phonebookData)
-		console.log(phonebookData)
-	})
-	// .catch(error => next(error))
-
-
+		.then( phonebookData => {
+			response.json(phonebookData)
+			console.log(phonebookData)
+		})
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
 	personDb.findById(request.params.id).then(phonebookData => {
 		if(phonebookData){
 			response.json(phonebookData)
-		  } else {
+		} else {
 			response.status(404).end()
-		  }  
-		})
+		}  
+	})
 		.catch(error => next(error))
 })
 
@@ -71,10 +64,10 @@ app.delete('/api/persons/:id', (request, response, next) => {
 	console.log('Thsi is the id of object to delete', request.params.id)
 	console.log('This is the body', body.name, body.number)
 	personDb.findByIdAndDelete(request.params.id)
-	.then((result) => {
-		response.status(204).end()
-	})
-	.catch(error => next(error))
+		.then(() => {
+			response.status(204).end()
+		})
+		.catch(error => next(error))
 })
 
 const inspectValidPhonebook = (name, number) => {
@@ -96,7 +89,7 @@ app.put('/api/persons/:id', (request, response, next) => {
 		{new: true, runValidators: true, context: 'query'})
 		.then(updatedPhonebook => {
 			if (!updatedPhonebook) {
-				return response.status(404).json({ error: 'Person not found' });
+				return response.status(404).json({ error: 'Person not found' })
 			} else {
 				console.log(updatedPhonebook)
 				response.json(updatedPhonebook)
@@ -112,20 +105,20 @@ app.post('/api/persons', (request, response, next) => {
 	if(!body.name && !body.number){
 		return response.status(400).json({ error: 'Name or number is missing'})	
 	}
-		const person = new personDb ({
-			name: body.name,
-			number: body.number
-		})
+	const person = new personDb ({
+		name: body.name,
+		number: body.number
+	})
 
-		person.save()
-			.then(savedPhonebook => {
-				if(savedPhonebook){
-					return response.json(savedPhonebook)
-				} else {
-					return response.status(404).json({ error: 'Empty response'})
-				}
-			})
-			.catch(error => next(error))
+	person.save()
+		.then(savedPhonebook => {
+			if(savedPhonebook){
+				return response.json(savedPhonebook)
+			} else {
+				return response.status(404).json({ error: 'Empty response'})
+			}
+		})
+		.catch(error => next(error))
 
 })
 
